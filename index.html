@@ -78,6 +78,9 @@
             border: 1px solid var(--border);
         }
 
+        .chart-card { min-height: 400px; display: flex; flex-direction: column; }
+        .chart-card canvas { flex: 1; }
+
         .stat-card { border-top: 4px solid var(--accent); }
         .stat-label { font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; }
         .stat-value { font-size: 1.8rem; font-weight: 700; margin: 10px 0; color: var(--primary); }
@@ -258,9 +261,10 @@ system.cpu.dcache = Cache(
 
     <section id="results">
         <h2>Simulation Results</h2>
-        <div class="grid-2" style="margin-bottom: 30px;">
-            <div class="card"><canvas id="missChart"></canvas></div>
-            <div class="card"><canvas id="amatChart"></canvas></div>
+        <div class="grid-3" style="margin-bottom: 30px;">
+            <div class="card chart-card"><canvas id="missChart"></canvas></div>
+            <div class="card chart-card"><canvas id="amatChart"></canvas></div>
+            <div class="card chart-card"><canvas id="cpiChart"></canvas></div>
         </div>
         <div class="table-wrap">
             <table id="resultsTable">
@@ -545,25 +549,102 @@ system.cpu.dcache = Cache(
             label: p,
             borderColor: colors[p],
             backgroundColor: colors[p] + '22',
+            pointBackgroundColor: colors[p],
+            pointRadius: 5,
+            pointHoverRadius: 7,
             data: labels.map(l => {
                 const assoc = l.split('-')[0];
                 const found = simulationData.find(d => d.assoc === assoc && d.policy === p);
                 return found ? found[metric] : null;
             }),
-            fill: true,
-            tension: 0.3
+            fill: false,
+            tension: 0.1
         }));
+
+        const commonOptions = (title, unit) => ({
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                title: { 
+                    display: true, 
+                    text: title, 
+                    font: { size: 18, weight: 'bold' },
+                    padding: { bottom: 20 }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    titleColor: '#1e293b',
+                    bodyColor: '#334155',
+                    borderColor: '#e2e8f0',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: true,
+                    callbacks: {
+                        label: (context) => {
+                            let label = context.dataset.label || '';
+                            if (label) label += ': ';
+                            if (context.parsed.y !== null) {
+                                label += context.parsed.y.toLocaleString(undefined, { minimumFractionDigits: 3 }) + ' ' + unit;
+                            }
+                            return label;
+                        }
+                    }
+                },
+                legend: { 
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20,
+                        font: { size: 12 }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)',
+                        drawBorder: false
+                    },
+                    title: { 
+                        display: true, 
+                        text: unit,
+                        font: { weight: 'bold' }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    title: { 
+                        display: true, 
+                        text: 'Associativity',
+                        font: { weight: 'bold' }
+                    }
+                }
+            }
+        });
 
         new Chart(document.getElementById('missChart'), {
             type: 'line',
             data: { labels, datasets: createDatasets('missRate') },
-            options: { plugins: { title: { display: true, text: 'Miss Rate (%) per Associativity' } } }
+            options: commonOptions('Miss Rate (%)', '%')
         });
 
         new Chart(document.getElementById('amatChart'), {
             type: 'line',
             data: { labels, datasets: createDatasets('amat') },
-            options: { plugins: { title: { display: true, text: 'AMAT (Cycles) per Associativity' } } }
+            options: commonOptions('AMAT (Cycles)', 'cycles')
+        });
+
+        new Chart(document.getElementById('cpiChart'), {
+            type: 'line',
+            data: { labels, datasets: createDatasets('cpi') },
+            options: commonOptions('CPI (Cycles Per Instruction)', 'CPI')
         });
     }
 </script>
