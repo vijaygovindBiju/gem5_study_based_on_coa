@@ -1,0 +1,16 @@
+### Cache Performance: Key Findings (1, 2, 4, 8-Way)
+
+*   **[1-Way (Direct)](direct.html):** Policy (LRU/FIFO) is irrelevant; 96.57% Hit Rate.
+*   **[2-Way](2way.html):** Most significant jump; Miss Rate drops by ~50% (to 1.29% LRU).
+*   **[4-Way](4way.html):** Optimal "sweet spot"; captures 99.54% Hit Rate.
+*   **[8-Way](8way.html):** Diminishing returns; near-perfect 99.81% Hit Rate.
+
+**Conclusions:**
+1. **LRU > FIFO:** LRU consistently yields higher Hit Rates and lower AMAT/CPI.
+2. **Associativity Matters:** Moving from 1-way to 2-way provides the largest performance boost.
+3. **Efficiency:** 4-way LRU offers the best balance of complexity and performance.
+
+**Additional Resources:**
+*   [Main Index](index.html)
+*   [Performance Graphs](graph.html)
+*   [Detailed Results](result.html)

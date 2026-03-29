@@ -105,7 +105,6 @@
         }
         .badge-lru { background: #dcfce7; color: #166534; }
         .badge-fifo { background: #fef3c7; color: #92400e; }
-        .badge-random { background: #dbeafe; color: #1e40af; }
 
         /* Workload Details */
         .phase-list { padding-left: 20px; }
@@ -129,6 +128,10 @@
         <li><a href="#specs-deep-dive">Technical Specs</a></li>
         <li><a href="#results">Simulation Results</a></li>
         <li><a href="#analysis">Analysis & Insights</a></li>
+        <li><a href="direct.html" style="color: var(--accent); font-weight: bold;">Direct Mapping →</a></li>
+        <li><a href="2way.html" style="color: var(--accent); font-weight: bold;">2-Way Assoc →</a></li>
+        <li><a href="4way.html" style="color: var(--accent); font-weight: bold;">4-Way Assoc →</a></li>
+        <li><a href="8way.html" style="color: var(--accent); font-weight: bold;">8-Way Assoc →</a></li>
         <li><a href="graph.html" style="color: var(--success); font-weight: bold;">Comparison Graphs →</a></li>
     </ul>
 </nav>
@@ -151,8 +154,8 @@
             </div>
             <div class="card stat-card" id="total-sims" style="border-top-color: var(--warning)">
                 <div class="stat-label">Simulation Runs</div>
-                <div class="stat-value">15</div>
-                <div class="stat-desc">5 Associativities x 3 Policies</div>
+                <div class="stat-value">8</div>
+                <div class="stat-desc">4 Associativities x 2 Policies</div>
             </div>
         </div>
     </section>
@@ -207,7 +210,6 @@ system.cpu.dcache = Cache(
                 <ul>
                     <li><strong>Direct Mapped (1-way):</strong> Each memory address maps to exactly one specific cache line. High conflict potential.</li>
                     <li><strong>Set-Associative (N-way):</strong> Memory maps to a "set" containing N lines. A balance between speed and flexibility.</li>
-                    <li><strong>Fully Associative:</strong> Any memory address can reside in <em>any</em> cache line. Minimizes conflict misses but requires complex hardware.</li>
                 </ul>
             </div>
             <div class="card">
@@ -216,7 +218,6 @@ system.cpu.dcache = Cache(
                 <ul>
                     <li><strong>LRU (Least Recently Used):</strong> Evicts the line that hasn't been accessed for the longest time. Best for temporal locality.</li>
                     <li><strong>FIFO (First-In, First-Out):</strong> Evicts the "oldest" line regardless of access history. Simple but prone to thrashing.</li>
-                    <li><strong>Random:</strong> Picks a victim at random. Uniform performance, immune to pathological access patterns.</li>
                 </ul>
             </div>
         </div>
@@ -242,7 +243,6 @@ system.cpu.dcache = Cache(
                         <tr><td>2-way</td><td>128</td><td>7 bits</td><td>6 bits</td><td>51 bits</td></tr>
                         <tr><td>4-way</td><td>64</td><td>6 bits</td><td>6 bits</td><td>52 bits</td></tr>
                         <tr><td>8-way</td><td>32</td><td>5 bits</td><td>6 bits</td><td>53 bits</td></tr>
-                        <tr><td>Full</td><td>1</td><td>0 bits</td><td>6 bits</td><td>58 bits</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -288,19 +288,10 @@ system.cpu.dcache = Cache(
         <h2>Detailed Analysis & Insights</h2>
         <div class="grid-2">
             <div class="card">
-                <h3>The Associativity Paradox</h3>
-                <p>Counter-intuitively, the <strong>8-Way Set Associative</strong> cache (LRU) outperformed the <strong>Fully Associative</strong> cache in our tests (0.188% vs 0.295% miss rate). This is due to the "Victim Concentration" effect.</p>
-                <p>In the Fully Associative cache, the 257th line in our stress loop (Phase 5) can evict <em>any</em> of the 256 lines. Since the loop then accesses those lines in reverse, the LRU policy consistently evicts the very next line needed. However, in the 8-way cache, the 257th line only competes for the 8 slots in <em>Set 0</em>. The other 31 sets remain "protected," preserving their temporal locality and resulting in fewer total misses.</p>
-            </div>
-            <div class="card">
-                <h3>The FIFO Thrashing Anomaly</h3>
-                <p>The <strong>Fully Associative FIFO</strong> configuration showed a catastrophic miss rate of <strong>5.03%</strong>. This is a classic example of cache thrashing.</p>
-                <p>Because FIFO evicts the "oldest" line regardless of how recently it was accessed, it falls into a pathological state during cyclic accesses. In Phase 5, after filling the cache (0-255), accessing line 256 evicts line 0. When the code immediately needs line 0 again, it misses and evicts line 1. This "belady-like" behavior continues, turning the cache into a simple delay line rather than a storage buffer.</p>
-            </div>
-            <div class="card">
-                <h3>Random Policy: The "Safe" Middle Ground</h3>
-                <p>The <strong>Random replacement policy</strong> proved surprisingly robust, often outperforming FIFO and even matching LRU at 4-way associativity (0.395% miss rate). </p>
-                <p>While LRU is superior for standard temporal locality, Random's lack of a fixed eviction pattern makes it immune to the pathological "loop-just-larger-than-cache" scenarios that cripple FIFO and occasionally hinder LRU. For hardware designers, this suggests that Random is a highly cost-effective choice when the workload patterns are unpredictable.</p>
+                <h3>Brief Summary of Results</h3>
+                <p><strong>1-Way to 2-Way:</strong> The most significant jump, reducing the miss rate by nearly 50% (from 3.43% to 1.79% for FIFO, and 1.29% for LRU).</p>
+                <p><strong>Policy Impact:</strong> LRU consistently outperforms FIFO in all associative configurations, especially at 8-way where LRU reaches 99.81% hit rate versus FIFO's 99.45%.</p>
+                <p><strong>Optimal Choice:</strong> 4-Way LRU offers the best balance, capturing over 99.5% of hits with significantly lower complexity than 8-way.</p>
             </div>
             <div class="card">
                 <h3>Performance Impact (CPI & AMAT)</h3>
@@ -338,18 +329,6 @@ system.cpu.dcache = Cache(
         "amat": 3.880985641647632
     },
     {
-        "id": "1_random",
-        "assoc": "1",
-        "policy": "RANDOM",
-        "time": 0.030148,
-        "missRate": 3.4318,
-        "hitRate": 96.5682,
-        "misses": 145548,
-        "accesses": 4241101,
-        "cpi": 5.122588,
-        "amat": 3.880985641647632
-    },
-    {
         "id": "2_fifo",
         "assoc": "2",
         "policy": "FIFO",
@@ -372,18 +351,6 @@ system.cpu.dcache = Cache(
         "accesses": 4241101,
         "cpi": 4.312176,
         "amat": 2.71341203236688
-    },
-    {
-        "id": "2_random",
-        "assoc": "2",
-        "policy": "RANDOM",
-        "time": 0.02584,
-        "missRate": 1.4853,
-        "hitRate": 98.5147,
-        "misses": 62992,
-        "accesses": 4241101,
-        "cpi": 4.390577,
-        "amat": 2.826184213279169
     },
     {
         "id": "4_fifo",
@@ -410,18 +377,6 @@ system.cpu.dcache = Cache(
         "amat": 2.24630012844283
     },
     {
-        "id": "4_random",
-        "assoc": "4",
-        "policy": "RANDOM",
-        "time": 0.023355,
-        "missRate": 0.39480000000000004,
-        "hitRate": 99.60520000000001,
-        "misses": 16742,
-        "accesses": 4241101,
-        "cpi": 3.968233,
-        "amat": 2.218311996177548
-    },
-    {
         "id": "8_fifo",
         "assoc": "8",
         "policy": "FIFO",
@@ -444,54 +399,6 @@ system.cpu.dcache = Cache(
         "accesses": 4241101,
         "cpi": 3.895874,
         "amat": 2.11390725414554
-    },
-    {
-        "id": "8_random",
-        "assoc": "8",
-        "policy": "RANDOM",
-        "time": 0.023006,
-        "missRate": 0.2186,
-        "hitRate": 99.78139999999999,
-        "misses": 9273,
-        "accesses": 4241101,
-        "cpi": 3.909076,
-        "amat": 2.132756890326236
-    },
-    {
-        "id": "fully_fifo",
-        "assoc": "Full",
-        "policy": "FIFO",
-        "time": 0.034124,
-        "missRate": 5.031499999999999,
-        "hitRate": 94.9685,
-        "misses": 213391,
-        "accesses": 4241101,
-        "cpi": 5.798175,
-        "amat": 4.850525799672059
-    },
-    {
-        "id": "fully_lru",
-        "assoc": "Full",
-        "policy": "LRU",
-        "time": 0.023162,
-        "missRate": 0.2952,
-        "hitRate": 99.7048,
-        "misses": 12518,
-        "accesses": 4241101,
-        "cpi": 3.93547,
-        "amat": 2.170966266175592
-    },
-    {
-        "id": "full_random",
-        "assoc": "Full",
-        "policy": "RANDOM",
-        "time": 0.023047,
-        "missRate": 0.2242,
-        "hitRate": 99.7758,
-        "misses": 9508,
-        "accesses": 4241101,
-        "cpi": 3.915927,
-        "amat": 2.142438447834042
     }
 ];
 
@@ -520,7 +427,7 @@ system.cpu.dcache = Cache(
         simulationData.forEach(d => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${d.assoc === 'Full' ? 'Full Assoc' : d.assoc + '-way'}</td>
+                <td>${d.assoc}-way</td>
                 <td><span class="badge badge-${d.policy.toLowerCase()}">${d.policy}</span></td>
                 <td>${d.hitRate.toFixed(2)}%</td>
                 <td>${d.missRate.toFixed(3)}%</td>
@@ -534,17 +441,17 @@ system.cpu.dcache = Cache(
     function initHighlights() {
         const bestMiss = [...simulationData].sort((a,b) => a.missRate - b.missRate)[0];
         document.querySelector('#best-overall .stat-value').textContent = bestMiss.missRate.toFixed(3) + '%';
-        document.querySelector('#best-overall .stat-desc').textContent = `Config: ${bestMiss.assoc}${bestMiss.assoc==='Full'?'':' -way'} ${bestMiss.policy}`;
+        document.querySelector('#best-overall .stat-desc').textContent = `Config: ${bestMiss.assoc}-way ${bestMiss.policy}`;
         
         const bestAmat = [...simulationData].sort((a,b) => a.amat - b.amat)[0];
         document.querySelector('#avg-gain .stat-value').textContent = bestAmat.amat.toFixed(2) + ' cy';
-        document.querySelector('#avg-gain .stat-desc').textContent = `Config: ${bestAmat.assoc}${bestAmat.assoc==='Full'?'':' -way'} ${bestAmat.policy}`;
+        document.querySelector('#avg-gain .stat-desc').textContent = `Config: ${bestAmat.assoc}-way ${bestAmat.policy}`;
     }
 
     function initCharts() {
-        const labels = ['1-way', '2-way', '4-way', '8-way', 'Full'];
-        const policies = ['LRU', 'FIFO', 'RANDOM'];
-        const colors = { LRU: '#10b981', FIFO: '#f59e0b', RANDOM: '#3b82f6' };
+        const labels = ['1-way', '2-way', '4-way', '8-way'];
+        const policies = ['LRU', 'FIFO'];
+        const colors = { LRU: '#10b981', FIFO: '#f59e0b' };
 
         const createDatasets = (metric) => policies.map(p => ({
             label: p,

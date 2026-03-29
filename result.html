@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2-Way Set Associative Performance: LRU vs FIFO</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --card-bg: #ffffff;
+            --primary: #1a365d;
+            --accent: #3182ce;
+            --text: #2d3748;
+            --border: #e2e8f0;
+            --lru-color: #10b981;
+            --fifo-color: #f59e0b;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            margin: 0;
+            padding: 40px;
+            line-height: 1.6;
+        }
+        .container { max-width: 950px; margin: 0 auto; }
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        h1 { color: var(--primary); text-align: center; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #718096; margin-bottom: 40px; }
+        
+        .chart-wrapper { height: 450px; margin-bottom: 40px; }
+        
+        .stats-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        .policy-card {
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+        .policy-card.lru { border-top: 5px solid var(--lru-color); background: #f0fff4; }
+        .policy-card.fifo { border-top: 5px solid var(--fifo-color); background: #fffaf0; }
+        
+        .policy-title { font-weight: 800; font-size: 1.2rem; display: block; margin-bottom: 15px; text-align: center; }
+        
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px dashed #cbd5e0; padding-bottom: 5px; }
+        .stat-label { font-weight: 600; color: #4a5568; }
+        .stat-value { font-family: monospace; font-weight: bold; }
+
+        .conclusion {
+            background: #ebf8ff;
+            border-left: 5px solid #4299e1;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .conclusion h3 { margin-top: 0; color: #2b6cb0; }
+        
+        .nav-links { text-align: center; margin-top: 20px; }
+        .nav-links a { color: var(--accent); text-decoration: none; font-weight: bold; margin: 0 10px; }
+        .nav-links a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h1>2-Way Set Associative Analysis</h1>
+        <p class="subtitle">Performance Divergence between LRU and FIFO in Associative Caches</p>
+
+        <div class="chart-wrapper">
+            <canvas id="associativeChart"></canvas>
+        </div>
+
+        <div class="stats-comparison">
+            <div class="policy-card lru">
+                <span class="policy-title" style="color: #22543d;">LRU Policy</span>
+                <div class="stat-row"><span class="stat-label">Miss Rate</span><span class="stat-value">1.285%</span></div>
+                <div class="stat-row"><span class="stat-label">CPI</span><span class="stat-value">4.312</span></div>
+                <div class="stat-row"><span class="stat-label">AMAT</span><span class="stat-value">2.713 cy</span></div>
+            </div>
+            <div class="policy-card fifo">
+                <span class="policy-title" style="color: #744210;">FIFO Policy</span>
+                <div class="stat-row"><span class="stat-label">Miss Rate</span><span class="stat-value">1.790%</span></div>
+                <div class="stat-row"><span class="stat-label">CPI</span><span class="stat-value">4.500</span></div>
+                <div class="stat-row"><span class="stat-label">AMAT</span><span class="stat-value">2.984 cy</span></div>
+            </div>
+        </div>
+
+        <div class="conclusion">
+            <h3>Key Conclusion</h3>
+            <p>
+                In a <strong>2-Way Set Associative</strong> cache, we observe a significant performance gap between replacement policies. <strong>LRU (Least Recently Used)</strong> outperformed FIFO by reducing the miss rate from 1.79% down to 1.285%.
+            </p>
+            <p>
+                Unlike direct mapping, 2-way associativity provides two slots per set, allowing the hardware to make a choice during eviction. LRU's ability to preserve the most recently accessed data proves superior for the temporal locality present in our workload, resulting in a <strong>4.2% reduction in CPI</strong> and a <strong>9.1% faster Average Memory Access Time (AMAT)</strong> compared to FIFO.
+            </p>
+        </div>
+    </div>
+
+    <div class="nav-links">
+        <a href="index.html">Main Report</a> | 
+        <a href="graph.html">Associativity Comparison</a>
+    </div>
+</div>
+
+<script>
+    const ctx = document.getElementById('associativeChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Miss Rate (%)', 'CPI', 'AMAT (cycles)'],
+            datasets: [
+                {
+                    label: '2-Way LRU',
+                    data: [1.285, 4.312, 2.713],
+                    backgroundColor: 'rgba(49, 130, 206, 0.7)',
+                    borderColor: 'rgba(49, 130, 206, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: '2-Way FIFO',
+                    data: [1.790, 4.500, 2.984],
+                    backgroundColor: 'rgba(237, 137, 54, 0.7)',
+                    borderColor: 'rgba(237, 137, 54, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: '2-Way Set Associative: LRU vs FIFO Performance Metrics',
+                    font: { size: 18, weight: 'bold' }
+                },
+                legend: { position: 'bottom' }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Metric Value' }
+                }
+            }
+        }
+    });
+</script>
+
+</body>
+</html>

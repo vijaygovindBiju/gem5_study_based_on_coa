@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>8-Way Set Associative Analysis: LRU vs FIFO</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --card-bg: #ffffff;
+            --primary: #1a365d;
+            --accent: #3182ce;
+            --text: #2d3748;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            margin: 0;
+            padding: 40px;
+            line-height: 1.6;
+        }
+        .container { max-width: 950px; margin: 0 auto; }
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        h1 { color: var(--primary); text-align: center; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #718096; margin-bottom: 40px; }
+        
+        .chart-wrapper { height: 450px; margin-bottom: 40px; }
+        
+        .stats-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        .policy-card {
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+        .policy-card.lru { border-top: 5px solid #3182ce; background: #ebf8ff; }
+        .policy-card.fifo { border-top: 5px solid #ed8936; background: #fffaf0; }
+        
+        .policy-title { font-weight: 800; font-size: 1.2rem; display: block; margin-bottom: 15px; text-align: center; }
+        
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px dashed #cbd5e0; padding-bottom: 5px; }
+        .stat-label { font-weight: 600; color: #4a5568; }
+        .stat-value { font-family: monospace; font-weight: bold; }
+
+        .conclusion {
+            background: #ebf8ff;
+            border-left: 5px solid #4299e1;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .conclusion h3 { margin-top: 0; color: #2b6cb0; }
+        
+        .nav-links { text-align: center; margin-top: 20px; font-weight: bold; }
+        .nav-links a { color: var(--accent); text-decoration: none; margin: 0 10px; padding: 5px 10px; border-radius: 5px; }
+        .nav-links a.active { background: var(--accent); color: white; }
+        .nav-links a:hover:not(.active) { background: #e2e8f0; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="nav-links">
+        <a href="index.html">Dashboard</a> | 
+        <a href="direct.html">Direct</a>
+        <a href="2way.html">2-Way</a>
+        <a href="4way.html">4-Way</a>
+        <a href="8way.html" class="active">8-Way</a>
+    </div>
+
+    <div class="card" style="margin-top: 20px;">
+        <h1>8-Way Set Associative Analysis</h1>
+        <p class="subtitle">Comparing LRU and FIFO Performance in an 8-Way Cache</p>
+
+        <div class="chart-wrapper">
+            <canvas id="comparisonChart"></canvas>
+        </div>
+
+        <div class="stats-comparison">
+            <div class="policy-card lru">
+                <span class="policy-title" style="color: #2b6cb0;">LRU Policy</span>
+                <div class="stat-row"><span class="stat-label">Miss Rate</span><span class="stat-value">0.188%</span></div>
+                <div class="stat-row"><span class="stat-label">CPI</span><span class="stat-value">3.896</span></div>
+                <div class="stat-row"><span class="stat-label">AMAT</span><span class="stat-value">2.114 cy</span></div>
+            </div>
+            <div class="policy-card fifo">
+                <span class="policy-title" style="color: #c05621;">FIFO Policy</span>
+                <div class="stat-row"><span class="stat-label">Miss Rate</span><span class="stat-value">0.548%</span></div>
+                <div class="stat-row"><span class="stat-label">CPI</span><span class="stat-value">4.034</span></div>
+                <div class="stat-row"><span class="stat-label">AMAT</span><span class="stat-value">2.313 cy</span></div>
+            </div>
+        </div>
+
+        <div class="conclusion">
+            <h3>Key Conclusion</h3>
+            <p>
+                At <strong>8-Way Associativity</strong>, <strong>LRU</strong> reaches near-optimal performance for this workload, with a miss rate of only 0.188%. FIFO, while still functional, lags significantly behind, demonstrating that for high-associativity caches, a sophisticated replacement policy like LRU is crucial to maximize hardware investment.
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ctx = document.getElementById('comparisonChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Miss Rate (%)', 'CPI', 'AMAT (cycles)'],
+            datasets: [
+                {
+                    label: 'LRU (8-Way)',
+                    data: [0.188, 3.896, 2.114],
+                    backgroundColor: 'rgba(49, 130, 206, 0.7)',
+                    borderColor: 'rgba(49, 130, 206, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'FIFO (8-Way)',
+                    data: [0.548, 4.034, 2.313],
+                    backgroundColor: 'rgba(237, 137, 54, 0.7)',
+                    borderColor: 'rgba(237, 137, 54, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: { display: true, text: '8-Way Associative: Policy Comparison', font: { size: 18, weight: 'bold' } },
+                legend: { position: 'bottom' }
+            },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+</script>
+</body>
+</html>

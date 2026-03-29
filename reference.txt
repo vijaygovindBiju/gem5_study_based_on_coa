@@ -1,0 +1,14 @@
+### Project References
+
+**Benchmark Methodology**
+*   McVoy, L. and Staelin, C. (1996). *lmbench: Portable Tools for Performance Analysis.* Proceedings of USENIX ATC. [Dependent-load chain methodology — lat_mem_rd]
+
+**Simulation Infrastructure**
+*   Binkert, N. et al. (2011). *The gem5 Simulator.* ACM SIGARCH Computer Architecture News, 39(2).
+*   Lowe-Power, J. et al. (2020). *The gem5 Simulator: Version 20.0+.* arXiv:2007.03152.
+
+**Cache Architecture & Miss Classification**
+*   Hill, M.D. and Smith, A.J. (1989). *Evaluating Associativity in CPU Caches.* IEEE Transactions on Computers, 38(12), pp.1612–1630.
+
+**Textbook**
+*   Hennessy, J. L. and Patterson, D. A. (2019). *Computer Architecture: A Quantitative Approach.* 6th ed. Morgan Kaufmann.
